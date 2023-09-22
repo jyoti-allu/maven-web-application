@@ -1,0 +1,11 @@
+node{
+    properties([buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '5', numToKeepStr: '5')), pipelineTriggers([pollSCM('* * * * *')])])
+    def mavenHome = tool name:"maven3.9.1"
+    stage("checkoutcode"){git credentialsId: '4f673db2-0c10-4c0c-82b5-15c6f7ee1aa7', url: 'https://github.com/jyoti-allu/maven-web-application.git'}
+    stage("build"){sh "${mavenHome}/bin/mvn clean package"}
+    stage("ExecuteSonarQubeReport"){sh "${mavenHome}/bin/mvn clean package sonar:sonar"}
+    stage("UploadArtifactIntoArtifactRepo"){sh "${mavenHome}/bin/mvn clean deploy"}
+    stage("DeployApplicationToTomcatServer"){sshagent(['9fb7bb44-adb9-4dd2-ae7c-fa2bb219fb33']) {
+    sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@172.31.29.187:/opt/tomcat9x/webapps/"}
+}
+}
